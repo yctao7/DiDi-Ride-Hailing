@@ -42,16 +42,18 @@ class Agent(object):
           order_id and driver_id, the pair indicating the assignment
         """
         if len(dispatch_observ) == 0:
-            return 0
+            return []
         edges = []
         orders, orders_inv = {}, {}
         drivers, drivers_inv = {}, {}
         for pair in dispatch_observ:
-            order_id, driver_id, distance = pair['order_id'], pair['driver_id'], pair['order_driver_distance']
+            order_id, driver_id = pair['order_id'], pair['driver_id']
+            distance = pair['order_driver_distance']
             reward = pair['reward_units']
             duration = pair['order_finish_timestamp'] - pair['timestamp']
             state = torch.tensor([[pair['timestamp'], *pair['driver_location']]])
-            next_state = torch.tensor([[pair['order_finish_timestamp'], *pair['order_finish_location']]])
+            next_state = torch.tensor([[pair['order_finish_timestamp'],
+                                        *pair['order_finish_location']]])
 
             v0 = self.value_network(state)
             v1 = self.value_network(next_state)
@@ -78,6 +80,9 @@ class Agent(object):
             edge['driver_id'] = driver_id
             edge['distance'] = distance
             edges.append(edge)
+
+        if len(orders) == 0 or len(drivers) == 0:
+            return []
 
         weights = np.zeros((len(orders), len(drivers)))
         for edge in edges:
