@@ -4,6 +4,7 @@ import ctypes
 import torch
 import numpy as np
 from train_value_network import FNN
+from entity import Driver
 
 class Agent(object):
     """ Agent for dispatching and reposition """
@@ -71,7 +72,7 @@ class Agent(object):
                 orders_inv[idx] = order_id
             if driver_id not in drivers:
                 idx = len(drivers)
-                drivers[driver_id] = idx
+                drivers[driver_id] = Driver(idx=idx, loc=pair['driver_location'])
                 drivers_inv[idx] = driver_id
 
             edge = {}
@@ -87,7 +88,7 @@ class Agent(object):
         weights = np.zeros((len(orders), len(drivers)))
         for edge in edges:
             i = orders[edge['order_id']]
-            j = drivers[edge['driver_id']]
+            j = drivers[edge['driver_id']].idx
             weights[i,j] = edge['weight']
 
         matched_pairs = self.hungarian(weights)
