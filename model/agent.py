@@ -18,6 +18,7 @@ class Agent(object):
         self.value_network.load_state_dict(torch.load(os.path.join(dirname, ckpt_path)))
         self.value_network.eval() # TODO: remove if update
 
+        self.LEARNING_RATE = 0.001
         self.GAMMA = 0.9
         self.TIME_SLOT = 10 * 60
 
@@ -69,12 +70,15 @@ class Agent(object):
                 dispatch_action.append({'order_id': order_loc2id[item.item()],
                                         'driver_id': driver_loc2id[i]})
 
-        # TODO: value network update
-        #loss = self.value_network.criterion(predicted_value, target_value)
-        #loss.backward()
-        #self.value_network.
+        self.update_value_network(dispatch_observ, dispatch_action)
 
         return dispatch_action
+
+    def update_value_network(dispatch_observ, dispatch_action):
+        #criterion = torch.nn.MSELoss()
+        #optimizer = torch.optim.Adam(self.value_network.parameters(), lr=self.LEARNING_RATE)
+        #loss = self.value_network.
+        pass
 
     def get_weight(self, pair):
         order_finish_location = pair['order_finish_location']
