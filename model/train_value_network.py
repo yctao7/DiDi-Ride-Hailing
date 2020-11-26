@@ -2,9 +2,15 @@ import os
 import torch
 import numpy as np
 
+
 DATA_DIR = os.environ.get('DATA')
 ORDER_FILE = 'data4/total_ride_request/order_20161101'
 WORKING_DIR = os.path.dirname(__file__)
+FNN_config = {
+    'input_dim': 2+1,
+    'output_dim': 1,
+    'hidden_dim': 128,
+}
 
 def read_file(filename):
     file = open(filename)
