@@ -1,6 +1,16 @@
+import os
 import torch
 import numpy as np
 
+
+DATA_DIR = os.environ.get('DATA')
+ORDER_FILE = 'data4/total_ride_request/order_20161101'
+WORKING_DIR = os.path.dirname(__file__)
+FNN_config = {
+    'input_dim': 2+1,
+    'output_dim': 1,
+    'hidden_dim': 128,
+}
 
 def read_file(filename):
     file = open(filename)
@@ -101,7 +111,8 @@ class Agent(object):
         reward = torch.tensor(self.discount_reward(reward, dt), dtype=torch.float)
 
         predict_value = self.value_network.forward(state)
-        target_value = reward + torch.tensor(self.gamma ** num_slot, dtype=torch.float) * self.value_network.forward(next_state)
+        gamma = torch.tensor(self.gamma ** num_slot, dtype=torch.float)
+        target_value = reward + gamma * self.value_network(next_state).squeeze()
         loss = self.criterion(predict_value, target_value)
 
         self.optimizer.zero_grad()
@@ -110,26 +121,25 @@ class Agent(object):
 
         after_predict_value = self.value_network.forward(state)
         MSE = self.criterion(predict_value, after_predict_value)
-        print('Loss:', loss.item(), 'MSE between updation:', MSE.item(), 'Value sample:', self.value_network.forward(state[0]))
-        # convergence_flag = (MSE < 1e-3)
-        convergence_flag = False
-        return convergence_flag
+        value_sample = self.value_network.forward(state[0]).item()
+        return loss.item(), MSE.item(), value_sample
 
     def train(self, filename):
         data_array = read_file(filename)
         max_iteration = 1500
-        for iter in range(max_iteration):
-            print('iter:', iter)
+        for i in range(max_iteration):
             sample_index = np.random.choice(data_array.shape[0], self.batch_size, replace=False)
             batch = data_array[sample_index]
-            convergence_flag = self.update_param(batch)
-            if convergence_flag:
-                break
+            loss, mse, value_sample = self.update_param(batch)
+            if i % 20 == 0:
+                print('Iteration {}, loss {}, MSE betw updates {}, value sample {}'.format(
+                      i, loss, mse, value_sample))
 
     def storage_network(self):
-        torch.save(self.value_network, 'value_network.pkl')
+        torch.save(self.value_network.state_dict(),
+                   os.path.join(WORKING_DIR, 'state_dict.pkl'))
 
 if __name__ == '__main__':
     Dummy_Agent = Agent()
-    Dummy_Agent.train('order_20161101')
+    Dummy_Agent.train(os.path.join(DATA_DIR, ORDER_FILE))
     Dummy_Agent.storage_network()
